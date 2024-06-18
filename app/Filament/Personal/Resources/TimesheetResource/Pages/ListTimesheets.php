@@ -6,10 +6,16 @@ use Carbon\Carbon;
 use Filament\Actions;
 use App\Models\Timesheet;
 use Filament\Actions\Action;
+use App\Imports\MyClientImport;
+use App\Imports\MyTimesheetImport;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use EightyNine\ExcelImport\ExcelImportAction;
 use App\Filament\Personal\Resources\TimesheetResource;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+
 
 class ListTimesheets extends ListRecords
 {
@@ -17,7 +23,7 @@ class ListTimesheets extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        $lastTimesheet = Timesheet::where('user_id', Auth::user()->id)->orderBy('id','desc')->first();
+        $lastTimesheet = Timesheet::where('user_id', Auth::user()->id)->orderBy('day_in','desc')->first();
         if($lastTimesheet == null){
             return [
                 Action::make('inWork')
@@ -116,6 +122,14 @@ class ListTimesheets extends ListRecords
                 ->send();
             }),
             Actions\CreateAction::make(),
+            ExcelImportAction::make()->slideOver()->use(MyTimesheetImport::class),
+            Action::make('CreatePDF')
+            ->label('Crear PDF')
+            ->requiresConfirmation()
+            ->url(
+                fn (): string => route('pdf.example', ['user' => Auth::user()]),
+                shouldOpenInNewTab: true
+            ),
         ];
     }
 }

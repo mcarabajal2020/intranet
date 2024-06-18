@@ -9,9 +9,12 @@ use App\Models\Timesheet;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Auth;
+use pxlrbt\FilamentExcel\Columns\Column;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use App\Filament\Personal\Resources\TimesheetResource\Pages;
 use App\Filament\Personal\Resources\TimesheetResource\RelationManagers;
 
@@ -22,7 +25,7 @@ class TimesheetResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-table-cells';
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('user_id',Auth::user()->id )->orderBy('id','desc');
+        return parent::getEloquentQuery()->where('user_id',Auth::user()->id )->orderBy('day_in','desc');
     }
 
 
@@ -51,8 +54,6 @@ class TimesheetResource extends Resource
         return $table
         ->columns([
             Tables\Columns\TextColumn::make('calendar.name')->searchable()
-                ->sortable(),
-            Tables\Columns\TextColumn::make('user.name')->searchable()
                 ->sortable(),
             Tables\Columns\TextColumn::make('type')
                 ->searchable(),
@@ -85,6 +86,19 @@ class TimesheetResource extends Resource
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
+                ExportBulkAction::make()->exports([
+                ExcelExport::make('table')
+                    ->fromTable()
+                    ->withFilename('Timesheet_'.date('Y-m-d') . '_export')
+                    ->withColumns([
+                        Column::make('User'),
+                        Column::make('created_at'),
+                        Column::make('deleted_at'),
+                    ]),
+                ExcelExport::make('form')->fromForm()
+                    ->askForFilename()
+                    ->askForWriterType(),
+                ]) 
             ]),
         ]);
     }

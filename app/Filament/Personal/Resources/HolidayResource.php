@@ -18,8 +18,21 @@ use App\Filament\Personal\Resources\HolidayResource\RelationManagers;
 class HolidayResource extends Resource
 {
     protected static ?string $model = Holiday::class;
-
+    protected static ?string $navigationLabel = 'Vacaciones';
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    public static function getNavigationBadge(): ?string
+    {
+       
+        return parent::getEloquentQuery()->where('user_id',Auth::user()->id)->where('type', 'pending')->count();
+    }
+        public static function getNavigationBadgeColor(): ?string
+    {
+        return parent::getEloquentQuery()->where('user_id',Auth::user()->id)->where('type', 'pending')->count() > 0 ? 'warning' : 'primary';
+    }
+        public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'The number of Pending Holidays';
+    }
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->where('user_id',Auth::user()->id );
@@ -55,7 +68,7 @@ class HolidayResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'gray',
                         'decline' => 'danger',
-                        'approved' => 'success',
+                        'approved' => 'primary',
                     })
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
